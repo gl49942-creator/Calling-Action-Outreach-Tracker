@@ -195,6 +195,10 @@ tbody tr.store-row td:first-child { font-weight: 700; color: #1F2D45; }
 .cc-bar .green { background: #1D9E75; } .cc-bar .blue { background: #3B82F6; } .cc-bar .red { background: #E24B4A; }
 .cc-go { font-size: 13.5px; font-weight: 600; color: #1E5FD9; }
 .campaign-switch { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.copy-btn { font: inherit; font-size: 14px; font-weight: 600; padding: 9px 16px; border-radius: 8px; border: 0.5px solid #1E5FD9; background: #1E5FD9; color: #fff; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background .15s; }
+.copy-btn:hover { background: #1A52BD; }
+.copy-btn.done { background: #1D7A46; border-color: #1D7A46; }
+.copy-btn.fail { background: #A32D2D; border-color: #A32D2D; }
 .cs-btn { font: inherit; font-size: 13px; font-weight: 500; padding: 8px 14px; border-radius: 8px; border: 0.5px solid #DCD9CE; background: #fff; color: #1F2D45; cursor: pointer; }
 .cs-btn.active { background: #1F2D45; color: #fff; border-color: #1F2D45; }
 @media (max-width: 800px) {
@@ -258,6 +262,7 @@ tbody tr.store-row td:first-child { font-weight: 700; color: #1F2D45; }
     <div class="card-shell">
       <div class="detail-header">
         <button class="back-btn" onclick="showCampaigns()">&larr; All campaigns</button>
+        <button class="copy-btn" id="copy-report-btn" onclick="copyReport()">&#128203; Copy report</button>
         <div class="campaign-switch" id="campaign-switch"></div>
       </div>
       <div class="kpi-row" id="total-kpi"></div>
@@ -1221,6 +1226,150 @@ function showCampaigns() {
 }
 
 renderCampaignPicker();
+
+function reportColors(rate) {
+  const rc = rateColor(rate);
+  if (rc === 'green') return { bg: '#E1F5EE', fg: '#0F6E56', bar: '#1D9E75' };
+  if (rc === 'blue')  return { bg: '#DBEAFE', fg: '#1E40AF', bar: '#3B82F6' };
+  return { bg: '#FCEBEB', fg: '#A32D2D', bar: '#E24B4A' };
+}
+
+function legendTexts() {
+  return Array.from(document.querySelectorAll('#overview-view .legend .leg-item')).map(el => el.textContent.trim().replace(/\s+/g, ' ').replace(/\s*·\s*click a row for CA detail/, ''));
+}
+
+function buildReportHTML() {
+  const c = CAMPAIGNS[currentCampaign];
+  const t = DATA.total;
+  const FONT = "font-family:'Segoe UI','Microsoft JhengHei',Arial,sans-serif;";
+  const td = 'padding:10px 12px;border-bottom:1px solid #E6E3D8;text-align:center;font-size:13px;color:#2C2C2A;white-space:nowrap;';
+  const th = 'padding:10px 12px;background:#1F2D45;color:#ffffff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;text-align:center;';
+  const pill = (txt, bg, fg) => `<span style="display:inline-block;background:${bg};color:${fg};font-weight:600;font-size:12px;padding:3px 11px;border-radius:12px;">${txt}</span>`;
+  const bar = (rate, color) => {
+    const w = Math.max(2, Math.min(rate, 100));
+    return `<table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;"><tr><td width="${w}%" bgcolor="${color}" style="background:${color};height:7px;font-size:1px;line-height:1px;">&nbsp;</td><td width="${100 - w}%" bgcolor="#F1EFE8" style="background:#F1EFE8;height:7px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table>`;
+  };
+
+  const names = Object.keys(DATA.stores).sort((a, b) => DATA.stores[b].outreach_rate - DATA.stores[a].outreach_rate);
+  const topConv = Object.keys(DATA.stores).slice().sort((a, b) => DATA.stores[b].conv_rate - DATA.stores[a].conv_rate)[0];
+
+  const kpi = (label, val, color) => `<td style="padding:14px 16px;border-right:1px solid #E6E3D8;vertical-align:bottom;"><div style="font-size:10.5px;color:#918E82;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px;">${label}</div><div style="font-size:24px;font-weight:600;color:${color};">${val}</div></td>`;
+  const rcT = reportColors(t.outreach_rate);
+
+  const rows = names.map((name, i) => {
+    const s = DATA.stores[name];
+    const rc = reportColors(s.outreach_rate);
+    const zebra = i % 2 ? 'background:#FAF9F6;' : '';
+    const crownO = i === 0 ? ' &#128081;' : '';
+    const crownC = name === topConv ? ' &#128081;' : '';
+    return `<tr style="${zebra}">
+      <td style="${td}text-align:left;font-weight:700;color:#1F2D45;${zebra}">${SHORT_CODE[name] || name}</td>
+      <td style="${td}${zebra}">${fmt(s.y)}</td>
+      <td style="${td}${zebra}">${fmt(s.n)}</td>
+      <td style="${td}${zebra}">${fmt(s.total)}</td>
+      <td style="${td}${zebra}">${pill(s.outreach_rate + '%', rc.bg, rc.fg)}${crownO}</td>
+      <td style="${td}${zebra}width:110px;">${bar(s.outreach_rate, rc.bar)}</td>
+      <td style="${td}${zebra}">${pill(s.conv_rate + '%', '#EEEDFE', '#3C3489')}${crownC}</td>
+      <td style="${td}${zebra}">&euro;${fmt(s.turnover)}</td>
+      <td style="${td}${zebra}">&euro;${fmt(s.avg_spend)}</td>
+    </tr>`;
+  }).join('');
+
+  const totalRow = `<tr style="background:#FAF9F6;">
+      <td style="${td}text-align:left;font-weight:700;color:#1F2D45;border-top:1px solid #DCD9CE;">Total</td>
+      <td style="${td}font-weight:600;border-top:1px solid #DCD9CE;">${fmt(t.y)}</td>
+      <td style="${td}font-weight:600;border-top:1px solid #DCD9CE;">${fmt(t.n)}</td>
+      <td style="${td}font-weight:600;border-top:1px solid #DCD9CE;">${fmt(t.total)}</td>
+      <td style="${td}border-top:1px solid #DCD9CE;">${pill(t.outreach_rate + '%', rcT.bg, rcT.fg)}</td>
+      <td style="${td}width:110px;border-top:1px solid #DCD9CE;">${bar(t.outreach_rate, rcT.bar)}</td>
+      <td style="${td}border-top:1px solid #DCD9CE;">${pill(t.conv_rate + '%', '#EEEDFE', '#3C3489')}</td>
+      <td style="${td}font-weight:600;border-top:1px solid #DCD9CE;">&euro;${fmt(t.turnover)}</td>
+      <td style="${td}font-weight:600;border-top:1px solid #DCD9CE;">&euro;${fmt(t.avg_spend)}</td>
+    </tr>`;
+
+  const legend = legendTexts().join(' &nbsp;&middot;&nbsp; ');
+  const periodText = (document.querySelector('#overview-view .page-header p') || {}).textContent || '';
+
+  return `<div style="${FONT}">
+<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:860px;max-width:100%;border:1px solid #DCD9CE;">
+  <tr><td colspan="9" style="background:#1F2D45;padding:20px 24px;"><div style="color:#ffffff;font-size:20px;font-weight:600;">${c.name} &mdash; Outreach Tracker</div><div style="color:#B8C0CE;font-size:12.5px;margin-top:5px;">${periodText}</div></td></tr>
+  <tr><td colspan="9" style="padding:0;"><table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;border-bottom:1px solid #DCD9CE;"><tr>
+    ${kpi('Total recommended', fmt(t.total), '#1F2D45')}
+    ${kpi('Outreach (Y)', fmt(t.y), '#0F6E56')}
+    ${kpi('Not outreached (N)', fmt(t.n), '#854F0B')}
+    ${kpi('Outreach rate', t.outreach_rate + '%', rcT.fg)}
+    ${kpi('Conv. rate', t.conv_rate + '%', '#3C3489')}
+    ${kpi(c.to_label, '&euro;' + fmt(t.turnover), '#1F2D45')}
+  </tr></table></td></tr>
+  <tr>
+    <th style="${th}text-align:left;">Store</th><th style="${th}">Outreach (Y)</th><th style="${th}">Outreach (N)</th><th style="${th}">Total</th><th style="${th}">Outreach rate</th><th style="${th}">Progress</th><th style="${th}">Conv.</th><th style="${th}">${c.to_label}</th><th style="${th}">Avg (&euro;)</th>
+  </tr>
+  ${rows}
+  ${totalRow}
+  <tr><td colspan="9" style="padding:10px 14px;font-size:11px;color:#918E82;">${legend}</td></tr>
+</table></div>`;
+}
+
+function buildReportText() {
+  const c = CAMPAIGNS[currentCampaign];
+  const t = DATA.total;
+  const periodText = (document.querySelector('#overview-view .page-header p') || {}).textContent || '';
+  const names = Object.keys(DATA.stores).sort((a, b) => DATA.stores[b].outreach_rate - DATA.stores[a].outreach_rate);
+  const line = (label, s) => [label, s.y, s.n, s.total, s.outreach_rate + '%', s.conv_rate + '%', s.turnover, s.avg_spend].join('\t');
+  return [
+    c.name + ' - Outreach Tracker',
+    periodText,
+    '',
+    ['Store', 'Outreach (Y)', 'Outreach (N)', 'Total', 'Outreach rate', 'Conv.', c.to_label, 'Avg (EUR)'].join('\t'),
+    ...names.map(n => line(SHORT_CODE[n] || n, DATA.stores[n])),
+    line('Total', t)
+  ].join('\n');
+}
+
+function flashCopyBtn(state, label) {
+  const btn = document.getElementById('copy-report-btn');
+  if (!btn) return;
+  const orig = '&#128203; Copy report';
+  btn.classList.remove('done', 'fail');
+  btn.classList.add(state);
+  btn.innerHTML = label;
+  setTimeout(() => { btn.classList.remove('done', 'fail'); btn.innerHTML = orig; }, 2200);
+}
+
+function legacyCopy(html) {
+  const box = document.createElement('div');
+  box.contentEditable = 'true';
+  box.style.cssText = 'position:fixed;left:-10000px;top:0;opacity:0;';
+  box.innerHTML = html;
+  document.body.appendChild(box);
+  const range = document.createRange();
+  range.selectNodeContents(box);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+  sel.removeAllRanges();
+  document.body.removeChild(box);
+  return ok;
+}
+
+async function copyReport() {
+  const html = buildReportHTML();
+  const text = buildReportText();
+  try {
+    if (navigator.clipboard && window.ClipboardItem) {
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' })
+      })]);
+      flashCopyBtn('done', '&#10003; Copied');
+      return;
+    }
+  } catch (e) { /* fall through to legacy copy */ }
+  if (legacyCopy(html)) flashCopyBtn('done', '&#10003; Copied');
+  else flashCopyBtn('fail', 'Copy blocked here. Open the file in a browser');
+}
 
 </script>
 </body>
