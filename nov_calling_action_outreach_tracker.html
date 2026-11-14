@@ -31,12 +31,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC"
 .pill-green { background: #E1F5EE; color: #0F6E56; }
 .pill-red { background: #FCEBEB; color: #A32D2D; }
 .pill-blue { background: #DBEAFE; color: #1E40AF; }
+.pill-amber { background: #FAEEDA; color: #854F0B; }
 .pill-purple { background: #EEEDFE; color: #3C3489; }
 .bar-bg { background: #F1EFE8; border-radius: 4px; height: 8px; overflow: hidden; border: 0.5px solid #DCD9CE; }
 .bar-fill { height: 100%; border-radius: 4px; }
 .bar-fill.green { background: #1D9E75; }
 .bar-fill.red { background: #E24B4A; }
 .bar-fill.blue { background: #3B82F6; }
+.bar-fill.amber { background: #EF9F27; }
 .crown { margin-left: 4px; }
 .legend { display: flex; gap: 20px; padding: 14px 24px; background: #FAF9F6; border-top: 0.5px solid #DCD9CE; flex-wrap: wrap; row-gap: 6px; }
 .leg-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #918E82; white-space: nowrap; }
@@ -246,9 +248,9 @@ tbody tr.store-row td:first-child { font-weight: 700; color: #1F2D45; }
       <div class="picker-intro">Select a campaign to view store and CA outreach status</div>
       <div class="campaign-grid" id="campaign-grid"></div>
       <div class="legend">
-        <div class="leg-item"><div class="dot" style="background:#1D9E75"></div> &gt;60% ahead of schedule</div>
-        <div class="leg-item"><div class="dot" style="background:#3B82F6"></div> 50–60% in progress</div>
-        <div class="leg-item"><div class="dot" style="background:#E24B4A"></div> &lt;50% needs attention</div>
+        <div class="leg-item"><div class="dot" style="background:#1D9E75"></div> ≥50% ahead of schedule</div>
+        <div class="leg-item"><div class="dot" style="background:#3B82F6"></div> 15–50% in progress</div>
+        <div class="leg-item"><div class="dot" style="background:#E24B4A"></div> &lt;15% needs attention</div>
       </div>
     </div>
   </div>
@@ -285,9 +287,9 @@ tbody tr.store-row td:first-child { font-weight: 700; color: #1F2D45; }
       </table>
 </div>
       <div class="legend">
-        <div class="leg-item"><div class="dot" style="background:#1D9E75"></div> &gt;60% ahead of schedule</div>
-        <div class="leg-item"><div class="dot" style="background:#3B82F6"></div> 50–60% in progress</div>
-        <div class="leg-item"><div class="dot" style="background:#E24B4A"></div> &lt;50% needs attention</div>
+        <div class="leg-item"><div class="dot" style="background:#1D9E75"></div> ≥50% ahead of schedule</div>
+        <div class="leg-item"><div class="dot" style="background:#3B82F6"></div> 15–50% in progress</div>
+        <div class="leg-item"><div class="dot" style="background:#E24B4A"></div> &lt;15% needs attention</div>
         <div class="leg-item">👑 Top outreach / Top conversion</div>
         <div class="leg-item" style="color:#B0AEA4;">TOTAL = all clients on the recommended list · click a row for CA detail</div>
       </div>
@@ -847,8 +849,8 @@ if (sessionStorage.getItem('overview_unlocked') === '1') {
 }
 
 function rateColor(rate) {
-  if (rate > 60) return 'green';
-  if (rate >= 50) return 'blue';
+  if (rate >= 50) return 'green';
+  if (rate >= 15) return 'blue';
   return 'red';
 }
 
@@ -1071,7 +1073,7 @@ function exportPDF() {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     const kpiY = 74;
-    const rateKpiColor = s.outreach_rate > 60 ? [15, 110, 86] : (s.outreach_rate >= 50 ? [30, 64, 175] : [163, 45, 45]);
+    const rateKpiColor = s.outreach_rate >= 50 ? [15, 110, 86] : (s.outreach_rate >= 15 ? [30, 64, 175] : [163, 45, 45]);
     const NAVY = [31, 45, 69];
     const kpis = [
       ['Total recommended', String(s.total).replace(/\B(?=(\d{3})+(?!\d))/g, ','), NAVY],
@@ -1101,8 +1103,8 @@ function exportPDF() {
     ]);
 
     function rateColors(rate) {
-      if (rate > 60) return { pillBg: [225, 245, 238], pillFg: [15, 110, 86], bar: [29, 158, 117] };
-      if (rate >= 50) return { pillBg: [219, 234, 254], pillFg: [30, 64, 175], bar: [59, 130, 246] };
+      if (rate >= 50) return { pillBg: [225, 245, 238], pillFg: [15, 110, 86], bar: [29, 158, 117] };
+      if (rate >= 15) return { pillBg: [219, 234, 254], pillFg: [30, 64, 175], bar: [59, 130, 246] };
       return { pillBg: [252, 235, 235], pillFg: [163, 45, 45], bar: [226, 75, 74] };
     }
 
@@ -1236,6 +1238,7 @@ function imgTierColors(rate) {
   const rc = rateColor(rate);
   if (rc === 'green') return { bg: '#E1F5EE', fg: '#0F6E56', bar: '#1D9E75' };
   if (rc === 'blue')  return { bg: '#DBEAFE', fg: '#1E40AF', bar: '#3B82F6' };
+  if (rc === 'amber') return { bg: '#FAEEDA', fg: '#854F0B', bar: '#EF9F27' };
   return { bg: '#FCEBEB', fg: '#A32D2D', bar: '#E24B4A' };
 }
 
