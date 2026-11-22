@@ -248,9 +248,9 @@ tbody tr.store-row td:first-child { font-weight: 700; color: #1F2D45; }
       <div class="picker-intro">Select a campaign to view store and CA outreach status</div>
       <div class="campaign-grid" id="campaign-grid"></div>
       <div class="legend">
-        <div class="leg-item"><div class="dot" style="background:#1D9E75"></div> &gt;60% ahead of schedule</div>
-        <div class="leg-item"><div class="dot" style="background:#3B82F6"></div> 30–60% in progress</div>
-        <div class="leg-item"><div class="dot" style="background:#E24B4A"></div> &lt;30% needs attention</div>
+        <div class="leg-item"><div class="dot" style="background:#1D9E75"></div> &gt;50% ahead of schedule</div>
+        <div class="leg-item"><div class="dot" style="background:#3B82F6"></div> 25–50% in progress</div>
+        <div class="leg-item"><div class="dot" style="background:#E24B4A"></div> &lt;25% needs attention</div>
       </div>
     </div>
   </div>
@@ -287,9 +287,9 @@ tbody tr.store-row td:first-child { font-weight: 700; color: #1F2D45; }
       </table>
 </div>
       <div class="legend">
-        <div class="leg-item"><div class="dot" style="background:#1D9E75"></div> &gt;60% ahead of schedule</div>
-        <div class="leg-item"><div class="dot" style="background:#3B82F6"></div> 30–60% in progress</div>
-        <div class="leg-item"><div class="dot" style="background:#E24B4A"></div> &lt;30% needs attention</div>
+        <div class="leg-item"><div class="dot" style="background:#1D9E75"></div> &gt;50% ahead of schedule</div>
+        <div class="leg-item"><div class="dot" style="background:#3B82F6"></div> 25–50% in progress</div>
+        <div class="leg-item"><div class="dot" style="background:#E24B4A"></div> &lt;25% needs attention</div>
         <div class="leg-item">👑 Top outreach / Top conversion</div>
         <div class="leg-item" style="color:#B0AEA4;">TOTAL = all clients on the recommended list · click a row for CA detail</div>
       </div>
@@ -849,8 +849,8 @@ if (sessionStorage.getItem('overview_unlocked') === '1') {
 }
 
 function rateColor(rate) {
-  if (rate > 60) return 'green';
-  if (rate >= 30) return 'blue';
+  if (rate > 50) return 'green';
+  if (rate >= 25) return 'blue';
   return 'red';
 }
 
@@ -1073,7 +1073,7 @@ function exportPDF() {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     const kpiY = 74;
-    const rateKpiColor = s.outreach_rate > 60 ? [15, 110, 86] : (s.outreach_rate >= 30 ? [30, 64, 175] : [163, 45, 45]);
+    const rateKpiColor = s.outreach_rate > 50 ? [15, 110, 86] : (s.outreach_rate >= 25 ? [30, 64, 175] : [163, 45, 45]);
     const NAVY = [31, 45, 69];
     const kpis = [
       ['Total recommended', String(s.total).replace(/\B(?=(\d{3})+(?!\d))/g, ','), NAVY],
@@ -1103,8 +1103,8 @@ function exportPDF() {
     ]);
 
     function rateColors(rate) {
-      if (rate > 60) return { pillBg: [225, 245, 238], pillFg: [15, 110, 86], bar: [29, 158, 117] };
-      if (rate >= 30) return { pillBg: [219, 234, 254], pillFg: [30, 64, 175], bar: [59, 130, 246] };
+      if (rate > 50) return { pillBg: [225, 245, 238], pillFg: [15, 110, 86], bar: [29, 158, 117] };
+      if (rate >= 25) return { pillBg: [219, 234, 254], pillFg: [30, 64, 175], bar: [59, 130, 246] };
       return { pillBg: [252, 235, 235], pillFg: [163, 45, 45], bar: [226, 75, 74] };
     }
 
